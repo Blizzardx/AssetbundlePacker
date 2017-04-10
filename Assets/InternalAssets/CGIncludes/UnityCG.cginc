@@ -1,3 +1,6 @@
+// Upgrade NOTE: replaced 'UNITY_INSTANCE_ID' with 'UNITY_VERTEX_INPUT_INSTANCE_ID'
+// Upgrade NOTE: replaced 'mul(UNITY_MATRIX_MVP,*)' with 'UnityObjectToClipPos(*)'
+
 #ifndef UNITY_CG_INCLUDED
 #define UNITY_CG_INCLUDED
 
@@ -34,7 +37,7 @@ struct appdata_base {
 	float4 vertex : POSITION;
 	float3 normal : NORMAL;
 	float4 texcoord : TEXCOORD0;
-	UNITY_INSTANCE_ID
+	UNITY_VERTEX_INPUT_INSTANCE_ID
 };
 
 struct appdata_tan {
@@ -42,7 +45,7 @@ struct appdata_tan {
 	float4 tangent : TANGENT;
 	float3 normal : NORMAL;
 	float4 texcoord : TEXCOORD0;
-	UNITY_INSTANCE_ID
+	UNITY_VERTEX_INPUT_INSTANCE_ID
 };
 
 struct appdata_full {
@@ -58,7 +61,7 @@ struct appdata_full {
 	half4 texcoord5 : TEXCOORD5;
 #endif
 	fixed4 color : COLOR;
-	UNITY_INSTANCE_ID
+	UNITY_VERTEX_INPUT_INSTANCE_ID
 };
 
 inline bool IsGammaSpace()
@@ -116,7 +119,7 @@ inline half3 LinearToGammaSpace (half3 linRGB)
 inline float4 UnityObjectToClipPos( in float3 pos )
 {
 #ifdef UNITY_USE_PREMULTIPLIED_MATRICES
-	return mul(UNITY_MATRIX_MVP, float4(pos, 1.0));
+	return UnityObjectToClipPos(float4(pos, 1.0));
 #else
 	// More efficient than computing M*VP matrix product
 	return mul(UNITY_MATRIX_VP, mul(unity_ObjectToWorld, float4(pos, 1.0)));

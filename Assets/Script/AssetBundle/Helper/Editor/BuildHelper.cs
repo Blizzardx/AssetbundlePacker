@@ -54,20 +54,77 @@ public class BuildHelper
         //    Debug.Log(asset);
         //}
     }
+    [MenuItem("BuildAssetbundle/AutoReplaceInternalAssetsWithCleanup")]
+    static void ReplaceInternalAssetsWithCleanup()
+    {
+        var internalAssetsExportPath = "InternalAssets";
+        if (Directory.Exists(Application.dataPath + "/" + internalAssetsExportPath))
+        {
+            Directory.Delete(Application.dataPath + "/" + internalAssetsExportPath, true);
+        }
+        Directory.CreateDirectory(Application.dataPath + "/" + internalAssetsExportPath);
+        // copy build in shader to target folder
+        var subpath = Application.dataPath.Substring(0, Application.dataPath.IndexOf("Assets")) + internalAssetsExportPath;
+        CopyFileOrDirectory(subpath + "/", Application.dataPath + "/" + internalAssetsExportPath + "/");
+
+        // refresh and reload
+        Refresh();
+
+        // export default material to datapath
+        InternalAssetsExportTool ExportTool = new InternalAssetsExportTool();
+        ExportTool.ExportInternalAsset("InternalAssets");
+
+        Refresh();
+
+        ReplaceInternalAssetTool tool = new ReplaceInternalAssetTool();
+        // replace default mat to use 
+        tool.ReplaceInternalAssetToBuildInAsset("InternalAssets", "InternalAssets", "");
+
+        Refresh();
+
+        tool = new ReplaceInternalAssetTool();
+        // replace other asset to use replaced assets     
+        tool.ReplaceInternalAssetToBuildInAsset("Data", "InternalAssets", "");
+
+        Refresh();
+    }
     [MenuItem("BuildAssetbundle/ReplaceInternalAssets")]
     static void ReplaceInternalAssets()
     {
-        //var asset = AssetDatabase.LoadAllAssetsAtPath("Resources/unity_builtin_extra");
-        //foreach(var elem in asset)
-        //{
-        //    Debug.Log(elem.name + " : " + elem.GetFileID());
-        //}
-        //Debug.Log(AssetDatabase.AssetPathToGUID("Resources/unity_builtin_extra"));
-        //Debug.Log(AssetDatabase.GUIDToAssetPath("0000000000000000f000000000000000"));
-        ReplaceInternalAssetTool tool = new ReplaceInternalAssetTool();
-        tool.ReplaceInternalAssetToBuildInAsset("Art1", "InternalAssets", "");        
-        //tool.ReplaceInternalAssetToBuildInAsset("InternalAssets1", "InternalAssets", "");
+        var tool = new ReplaceInternalAssetTool();
+        // replace other asset to use replaced assets     
+        tool.ReplaceInternalAssetToBuildInAsset("Data", "InternalAssets", "");
+
+        Refresh();
     }
 
-    
+    #region tool
+    static void Refresh()
+    {
+        AssetDatabase.Refresh(ImportAssetOptions.ForceUpdate);
+        AssetDatabase.SaveAssets();
+    }
+    static void CopyFileOrDirectory(string from,string to)
+    {
+        var dir = new DirectoryInfo(from);
+        var files = dir.GetFiles("*", SearchOption.AllDirectories);
+        foreach(var file in files)
+        {
+            var relatePath = file.FullName.Substring(from.Length);
+            var targetPath = to + relatePath;
+            EnsureFolderByFilePath(targetPath);
+            File.Copy(file.FullName, targetPath);
+        }
+    }
+    static void EnsureFolderByFilePath(string filepath)
+    {
+        filepath = filepath.Replace('\\', '/');
+        filepath = filepath.Substring(0, filepath.LastIndexOf('/'));
+
+        if (!Directory.Exists(filepath))
+        {
+            Directory.CreateDirectory(filepath);
+        }
+    }
+    #endregion
 }

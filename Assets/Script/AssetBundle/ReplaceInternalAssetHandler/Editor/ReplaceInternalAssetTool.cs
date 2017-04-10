@@ -6,6 +6,7 @@ using System.Text;
 using UnityEditor;
 using UnityEngine;
 using System.IO.Compression;
+using System.Runtime.Serialization;
 
 namespace Assets.Script.AssetBundle.ReplaceInternalAssetHandler.Editor
 {
@@ -41,22 +42,27 @@ namespace Assets.Script.AssetBundle.ReplaceInternalAssetHandler.Editor
         private Dictionary<string, AssetInfo> m_MatMap;
         private List<UnityEngine.Object> m_AllInternalAsset;
         private Dictionary<string,UnityEngine.Object> m_AllInternalAssetMap;
+        private List<FileReplaceReport> m_Reporter;
 
         public ReplaceInternalAssetTool()
         {
             BuildInternalAssetMap();
         }
-        public void ReplaceInternalAssetToBuildInAsset(string dataPath, string internalAssetsPath,string shaderzipPath)
+        public List<FileReplaceReport> ReplaceInternalAssetToBuildInAsset(string dataPath, string internalAssetsPath,string shaderzipPath)
         {
+            m_Reporter = new List<FileReplaceReport>();
+
             m_strShaderZipPath = shaderzipPath;
             m_strReplacedInternalAssetPath = internalAssetsPath;
-
-            CleanInternalDataPath();
-
+            
             HandlerShader();
 
             BeginReplace(dataPath);
+
+            return m_Reporter;
         }
+
+
         private void BeginReplace(string dataPath)
         {
             var dataPathPerfix = Application.dataPath.Substring(0, Application.dataPath.IndexOf("Assets"));
@@ -87,15 +93,11 @@ namespace Assets.Script.AssetBundle.ReplaceInternalAssetHandler.Editor
             foreach (var elem in allAssetsMap)
             {
                 var internalDepList = CheckIsDepInternalAssets(elem.Value);
+                if (null == internalDepList)
+                {
+                    continue;
+                }
                 ReplaceDataPath(elem.Value, internalDepList);
-            }
-        }
-        private void CleanInternalDataPath()
-        {
-            var realPath = Application.dataPath + "/" + m_strReplacedInternalAssetPath;
-            if(Directory.Exists(realPath))
-            {
-                //Directory.Delete(realPath, true);
             }
         }
         private void HandlerShader()
@@ -113,7 +115,14 @@ namespace Assets.Script.AssetBundle.ReplaceInternalAssetHandler.Editor
                 if(info.GetFileSuffix() == ".shader")
                 {
                     var shader = AssetDatabase.LoadAssetAtPath<Shader>(info.GetRelativePath());
-                    m_ShaderMap.Add(shader.name, info);
+                    if (m_ShaderMap.ContainsKey(shader.name))
+                    {
+                        Debug.LogError(shader.name);
+                    }
+                    else
+                    {
+                        m_ShaderMap.Add(shader.name, info);
+                    }
                 }
                 else if(info.GetFileSuffix() == ".mat")
                 {
@@ -126,10 +135,19 @@ namespace Assets.Script.AssetBundle.ReplaceInternalAssetHandler.Editor
         }
         private List<string> CheckIsDepInternalAssets(AssetInfo info)
         {
+            if (info.GetFileSuffix().ToLower() == ".fbx")
+            {
+                return null;
+            }
             var assets = EditorUtility.CollectDependencies(new UnityEngine.Object[] { AssetDatabase.LoadMainAssetAtPath(info.GetRelativePath()) });
             List<string> depList = new List<string>();
             foreach (var asset in assets)
             {
+                if (asset == null)
+                {
+                    Debug.LogError(info.GetFullPath());
+                    continue;
+                }
                 string path = AssetDatabase.GetAssetPath(asset) + '/' + asset.name;
                 if (!path.StartsWith("Assets"))
                 {
@@ -146,18 +164,18 @@ namespace Assets.Script.AssetBundle.ReplaceInternalAssetHandler.Editor
             }
             foreach(var elem in depInternalAssets)
             {
-                Debug.Log(elem + " " + info.GetFullPath());
+                //Debug.Log(elem + " " + info.GetFullPath());
                 var assetName = FixInternalAssetPath(elem);
                 if(m_ShaderMap.ContainsKey(assetName))
                 {
                     // do replace
-                    Debug.LogFormat("Replace {0} to {1} ", elem, assetName);
+                    Debug.LogFormat("try Replace {0} to {1} ", elem, assetName);
                     DoReplace(info,elem,m_ShaderMap[assetName].GetFullPath(),typeof(Shader));
                 }
                 else if(m_MatMap.ContainsKey(assetName))
                 {
                     // do replace
-                    Debug.LogFormat("Replace {0} to {1} ", elem, assetName);
+                    Debug.LogFormat("try Replace {0} to {1} ", elem, assetName);
                     DoReplace(info, elem, m_MatMap[assetName].GetFullPath(), typeof(Material));
                 }
             }
@@ -165,7 +183,10 @@ namespace Assets.Script.AssetBundle.ReplaceInternalAssetHandler.Editor
         private void DoReplace(AssetInfo mainAssets,string internalAssetPath,string newAssetPath, Type type)
         {
             var reporte = GenReport(mainAssets, internalAssetPath, newAssetPath,type);
-
+            if (null == reporte)
+            {
+                return;
+            }
             var file = File.ReadAllText(mainAssets.GetFullPath());
 
             //{fileID: 46, guid: 0000000000000000f000000000000000, type: 0}
@@ -181,6 +202,9 @@ namespace Assets.Script.AssetBundle.ReplaceInternalAssetHandler.Editor
             file = file.Replace(tmpContent2, tmpContent1);
 
             File.WriteAllText(mainAssets.GetFullPath(), file);
+
+            // add to reporter list
+            m_Reporter.Add(reporte);
         }
         private FileReplaceReport GenReport(AssetInfo mainAssets, string internalAssetPath, string newAssetPath,Type type)
         {
@@ -188,10 +212,16 @@ namespace Assets.Script.AssetBundle.ReplaceInternalAssetHandler.Editor
             AssetInfo newAssetInfo = new AssetInfo(newAssetPath);
             newInfo.guId = AssetDatabase.AssetPathToGUID(newAssetInfo.GetRelativePath());
             newInfo.fileId = AssetDatabase.LoadMainAssetAtPath(newAssetInfo.GetRelativePath()).GetFileID().ToString();
-            newInfo.type = "3";
+            newInfo.type = (type == typeof(Material)) ? "2" : "3";
+            //newInfo.type =  "2" ;
 
             FileMetaInfo currentInfo = new FileMetaInfo();
             currentInfo.guId = GetInternalAssetsGUID(internalAssetPath);
+            if (!m_AllInternalAssetMap.ContainsKey(internalAssetPath + type))
+            {
+                Debug.LogError("assets can't find at internal asset map " + internalAssetPath + type);
+                return null;
+            }
             currentInfo.fileId = m_AllInternalAssetMap[internalAssetPath+ type].GetFileID().ToString();
             currentInfo.type = "0";
 
