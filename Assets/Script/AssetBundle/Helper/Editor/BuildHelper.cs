@@ -89,7 +89,7 @@ public class BuildHelper
         Refresh();
     }
     [MenuItem("BuildAssetbundle/ReplaceInternalAssets")]
-    static void ReplaceInternalAssets()
+    static public void ReplaceInternalAssets()
     {
         var tool = new ReplaceInternalAssetTool();
         // replace other asset to use replaced assets     

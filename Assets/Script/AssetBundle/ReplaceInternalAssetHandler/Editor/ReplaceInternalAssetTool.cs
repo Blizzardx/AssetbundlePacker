@@ -114,14 +114,22 @@ namespace Assets.Script.AssetBundle.ReplaceInternalAssetHandler.Editor
                 AssetInfo info = new AssetInfo(file.FullName);
                 if(info.GetFileSuffix() == ".shader")
                 {
-                    var shader = AssetDatabase.LoadAssetAtPath<Shader>(info.GetRelativePath());
-                    if (m_ShaderMap.ContainsKey(shader.name))
+                    var relativePath = info.GetRelativePath();
+                    var shader = AssetDatabase.LoadAssetAtPath<Shader>(relativePath);
+                    if (string.IsNullOrEmpty(shader.name))
                     {
                         Debug.LogError(shader.name);
                     }
                     else
                     {
-                        m_ShaderMap.Add(shader.name, info);
+                        if (m_ShaderMap.ContainsKey(shader.name))
+                        {
+                            Debug.LogError(shader.name);
+                        }
+                        else
+                        {
+                            m_ShaderMap.Add(shader.name, info);
+                        }
                     }
                 }
                 else if(info.GetFileSuffix() == ".mat")
