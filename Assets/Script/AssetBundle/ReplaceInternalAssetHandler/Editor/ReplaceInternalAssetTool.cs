@@ -36,6 +36,11 @@ namespace Assets.Script.AssetBundle.ReplaceInternalAssetHandler.Editor
             ".meta",
             ".cs",
        };
+        private string[] m_IgnoreAssetSuffixList = new string[]
+        {
+            ".ttf",
+            ".fbx"
+        };
         private string m_strReplacedInternalAssetPath;
         private string m_strShaderZipPath;
         private Dictionary<string, AssetInfo> m_ShaderMap;
@@ -143,11 +148,10 @@ namespace Assets.Script.AssetBundle.ReplaceInternalAssetHandler.Editor
         }
         private List<string> CheckIsDepInternalAssets(AssetInfo info)
         {
-            if (info.GetFileSuffix().ToLower() == ".fbx")
+            if (info.IsInSuffixList(m_IgnoreAssetSuffixList))
             {
                 return null;
-            }
-            var assets = EditorUtility.CollectDependencies(new UnityEngine.Object[] { AssetDatabase.LoadMainAssetAtPath(info.GetRelativePath()) });
+            }            var assets = EditorUtility.CollectDependencies(new UnityEngine.Object[] { AssetDatabase.LoadMainAssetAtPath(info.GetRelativePath()) });
             List<string> depList = new List<string>();
             foreach (var asset in assets)
             {

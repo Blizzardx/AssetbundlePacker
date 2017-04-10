@@ -27,7 +27,7 @@ public class AssetInfo
     {
         for (int i = 0; i < suffixList.Length; ++i)
         {
-            if (m_strFullPath.EndsWith(suffixList[i]))
+            if (m_strFullPath.ToLower().EndsWith(suffixList[i].ToLower()))
             {
                 return true;
             }
@@ -38,7 +38,7 @@ public class AssetInfo
     {
         for (int i = 0; i < perfixList.Length; ++i)
         {
-            if (m_strRelativePath.StartsWith(perfixList[i]))
+            if (m_strRelativePath.ToLower().StartsWith(perfixList[i].ToLower()))
             {
                 return true;
             }
