@@ -39,7 +39,8 @@ namespace Assets.Script.AssetBundle.ReplaceInternalAssetHandler.Editor
         private string[] m_IgnoreAssetSuffixList = new string[]
         {
             ".ttf",
-            ".fbx"
+            ".fbx",
+            ".anim",
         };
         private string m_strReplacedInternalAssetPath;
         private string m_strShaderZipPath;

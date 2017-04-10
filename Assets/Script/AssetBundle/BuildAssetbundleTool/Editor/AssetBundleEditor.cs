@@ -56,7 +56,7 @@ class AssetBundleEditor
             {
                 continue;
             }
-            if (!GenFilesMenuItems.IsVailed(fileInfo.Name))
+            if (!IsVailed(fileInfo.Name))
             {
                 Debug.LogError("Name error " + fileInfo.FullName);
                 if (isRename)
@@ -105,7 +105,7 @@ class AssetBundleEditor
     [MenuItem("资源打包/Force build")]
     static public void Testbuild()
     {
-        BuildScript.BuildAssetBundles();
+        //BuildScript.BuildAssetBundles();
         return;
         string outputPath = Application.streamingAssetsPath + "/AssetBundles/iOS";
         //return;
@@ -308,5 +308,24 @@ class AssetBundleEditor
                 }
             }
         }
+    }
+    static public bool IsVailed(string str)
+    {
+        if (string.IsNullOrEmpty(str))
+        {
+            return false;
+        }
+        if (str.Length <= 0)
+        {
+            return false;
+        }
+        var tmpList = str.Split('/');
+        if (tmpList.Length > 0)
+        {
+            str = tmpList[tmpList.Length - 1];
+        }
+        //Debug.Log("check name " + str);
+        var res = str.Split(' ');
+        return res.Length <= 1;
     }
 }
