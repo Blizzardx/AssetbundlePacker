@@ -17,6 +17,11 @@ public class BuildHelper
         {
             return;
         }
+        // set sprite packer
+        UnityEditor.Sprites.Packer.SelectedPolicy = "DefaultPackerPolicySample";
+        UnityEditor.Sprites.Packer.SelectedPolicy = "DefaultPackerPolicy";
+        UnityEditor.Sprites.Packer.RebuildAtlasCacheIfNeeded(EditorUserBuildSettings.activeBuildTarget, true, UnityEditor.Sprites.Packer.Execution.ForceRegroup);
+
         BuildAssetbundleTool tool = new BuildAssetbundleTool();
        var e = tool.Build("Data", "Pack", "UGUI", "StreamingAssets/AssetsBundle");
         if(null != e)
