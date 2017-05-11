@@ -1,9 +1,13 @@
 fileFormatVersion: 2
-guid: d254f5084abb88342ba911be292ef797
-timeCreated: 1491751908
+guid: 2945668d24b2f904e969eda3888494f4
+timeCreated: 1491794097
 licenseType: Free
 NativeFormatImporter:
+<<<<<<< HEAD
   mainObjectFileID: -1
+=======
+  mainObjectFileID: 2100000
+>>>>>>> 8c9d6e35953a88e4db1765b223a608c1f2102b06
   userData: 
   assetBundleName: 1_scene.bundle
   assetBundleVariant: 

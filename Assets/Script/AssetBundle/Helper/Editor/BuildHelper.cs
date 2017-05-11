@@ -73,11 +73,14 @@ public class BuildHelper
     [MenuItem("BuildAssetbundle/AutoReplaceInternalAssetsWithCleanup")]
     static void ReplaceInternalAssetsWithCleanup()
     {
+<<<<<<< HEAD
         var res = EditorUtility.DisplayDialog("Warning", "Are you sure you realy want to do that ? ", "OK", "Cancle");
         if (!res)
         {
             return;
         }
+=======
+>>>>>>> 8c9d6e35953a88e4db1765b223a608c1f2102b06
         var internalAssetsExportPath = "InternalAssets";
         if (Directory.Exists(Application.dataPath + "/" + internalAssetsExportPath))
         {
@@ -112,17 +115,21 @@ public class BuildHelper
     [MenuItem("BuildAssetbundle/ReplaceInternalAssets")]
     static public void ReplaceInternalAssets()
     {
+<<<<<<< HEAD
         var res = EditorUtility.DisplayDialog("Warning", "Are you sure you realy want to do that ? ", "OK", "Cancle");
         if (!res)
         {
             return;
         }
+=======
+>>>>>>> 8c9d6e35953a88e4db1765b223a608c1f2102b06
         var tool = new ReplaceInternalAssetTool();
         // replace other asset to use replaced assets     
         tool.ReplaceInternalAssetToBuildInAsset("Data", "InternalAssets", "");
 
         Refresh();
     }
+<<<<<<< HEAD
     [MenuItem("BuildAssetbundle/ClearAllBundleName")]
     static public void ClearAllBundleName()
     {
@@ -149,6 +156,8 @@ public class BuildHelper
         AssetDatabase.RemoveUnusedAssetBundleNames();
         EditorUtility.DisplayDialog("information", "Done ", "OK");
     }
+=======
+>>>>>>> 8c9d6e35953a88e4db1765b223a608c1f2102b06
 
     #region tool
     static void Refresh()
