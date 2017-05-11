@@ -19,7 +19,7 @@ public class BuildHelper
         }
         // set sprite packer
         UnityEditor.Sprites.Packer.SelectedPolicy = "DefaultPackerPolicySample";
-        UnityEditor.Sprites.Packer.SelectedPolicy = "DefaultPackerPolicy";
+       // UnityEditor.Sprites.Packer.SelectedPolicy = "DefaultPackerPolicy";
         UnityEditor.Sprites.Packer.RebuildAtlasCacheIfNeeded(EditorUserBuildSettings.activeBuildTarget, true, UnityEditor.Sprites.Packer.Execution.ForceRegroup);
 
         BuildAssetbundleTool tool = new BuildAssetbundleTool();
@@ -154,7 +154,18 @@ public class BuildHelper
         AssetDatabase.RemoveUnusedAssetBundleNames();
         EditorUtility.DisplayDialog("information", "Done ", "OK");
     }
+    [MenuItem("BuildAssetbundle/CleanupBundleOutputPath")]
+    static public void CleanupBundleOutputPath()
+    {
+        var res = EditorUtility.DisplayDialog("Warning", "Are you sure you realy want to do that ? ", "OK", "Cancle");
+        if (!res)
+        {
+            return;
+        }       
 
+        Directory.Delete(Application.dataPath + "/StreamingAssets/AssetsBundle", true);
+        EditorUtility.DisplayDialog("information", "Done ", "OK");
+    }
     #region tool
     static void Refresh()
     {
