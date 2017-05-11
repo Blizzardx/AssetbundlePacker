@@ -1,3 +1,5 @@
+// Upgrade NOTE: replaced 'UNITY_INSTANCE_ID' with 'UNITY_VERTEX_INPUT_INSTANCE_ID'
+
 #ifndef UNITY_INSTANCING_INCLUDED
 #define UNITY_INSTANCING_INCLUDED
 
@@ -26,14 +28,14 @@
 	CBUFFER_END
 
 #if defined(SHADER_API_PSSL)
-	#define UNITY_INSTANCE_ID uint instanceID;
+	#define UNITY_VERTEX_INPUT_INSTANCE_ID uint instanceID;
 	#define UNITY_TRANSFER_INSTANCE_ID(input, output) output.instanceID = _GETINSTANCEID(input)
 	#define UNITY_SETUP_INSTANCE_ID(input) unity_InstanceID = _GETINSTANCEID(input) + unity_BaseInstanceID
 	#define UNITY_VERTEX_OUTPUT_STEREO
 	#define UNITY_INITIALIZE_VERTEX_OUTPUT_STEREO(output)
 #else
 	// Used in vertex shader input / output struct.
-	#define UNITY_INSTANCE_ID uint instanceID : SV_InstanceID;
+	#define UNITY_VERTEX_INPUT_INSTANCE_ID uint instanceID : SV_InstanceID;
 
 	// Copy instance ID from input struct to output struct. Used in vertex shader.
 	#define UNITY_TRANSFER_INSTANCE_ID(input, output) output.instanceID = input.instanceID
@@ -96,7 +98,7 @@
 
 #else
 
-	#define UNITY_INSTANCE_ID
+	#define UNITY_VERTEX_INPUT_INSTANCE_ID
 	#define UNITY_TRANSFER_INSTANCE_ID(input, output)
 	#define UNITY_SETUP_INSTANCE_ID(input)
 	#define UNITY_VERTEX_OUTPUT_STEREO

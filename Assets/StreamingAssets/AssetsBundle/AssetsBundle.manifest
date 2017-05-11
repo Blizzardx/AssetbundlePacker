@@ -1,0 +1,19 @@
+ManifestFileVersion: 0
+CRC: 1063811597
+AssetBundleManifest:
+  AssetBundleInfos:
+    Info_0:
+      Name: 1_scene.bundle
+      Dependencies: {}
+    Info_1:
+      Name: 1.bundle
+      Dependencies:
+        Dependency_0: 1_scene.bundle
+        Dependency_1: common_ui.bundle
+    Info_2:
+      Name: pack.bundle
+      Dependencies:
+        Dependency_0: 1_scene.bundle
+    Info_3:
+      Name: common_ui.bundle
+      Dependencies: {}
