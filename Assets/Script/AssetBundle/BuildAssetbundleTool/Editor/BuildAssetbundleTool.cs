@@ -4,6 +4,7 @@ using UnityEngine;
 using UnityEditor;
 using System.IO;
 using System.Text;
+using Common.Component;
 
 namespace Assets.Scripts.AssetBundle.BuildAssetbundleTool.Editor
 {
@@ -48,6 +49,13 @@ namespace Assets.Scripts.AssetBundle.BuildAssetbundleTool.Editor
             ".mat",
             ".wav",
             ".mp3",
+        };
+        private string[] m_AlwaysNullBundleNameSuffixList = new string[]
+        {
+            "mask",
+            "NavMesh.asset",
+            "LightingData.asset",
+
         };
 
         #region public interface
@@ -560,15 +568,24 @@ namespace Assets.Scripts.AssetBundle.BuildAssetbundleTool.Editor
                 bundleName = mainAsset.GetFileNameWithoutSuffix();
             }
             var importer = AssetImporter.GetAtPath(targetAsset.GetRelativePath());
-            DoSetBundleName(importer, bundleName, "." + m_strBundleSuffix);
+            DoSetBundleName(mainAsset.GetRelativePath(), importer, bundleName, "." + m_strBundleSuffix);
         }
         private void SetAssetBundleName(AssetInfo targetAsset, string bundleName)
         {            
             var importer = AssetImporter.GetAtPath(targetAsset.GetRelativePath());
-            DoSetBundleName(importer, bundleName, "." + m_strBundleSuffix);
+            DoSetBundleName(string.Empty, importer, bundleName, "." + m_strBundleSuffix);
         }
-        private void DoSetBundleName(AssetImporter importer, string bundleName, string suffix)
+        private void DoSetBundleName(string directory,AssetImporter importer, string bundleName, string suffix)
         {
+            //为了防止重名，如果不是需要直接加载的资源，计算路径的crc32 加入到bundlename里边
+            if (string.IsNullOrEmpty(directory) || IsDirectoryInDataOrPack(directory))
+            {
+                directory = string.Empty;
+            }
+            else
+            {
+                directory = GetCRC32(directory) + "_";
+            }
             if (string.IsNullOrEmpty(bundleName))
             {
                 Debug.LogError("error bundle name ,name is null or empty " + bundleName);
@@ -581,9 +598,35 @@ namespace Assets.Scripts.AssetBundle.BuildAssetbundleTool.Editor
             {
                 Debug.LogFormat("auto fix bundle name {0} to {1} ", lastName, bundleName);
             }
+            //把路径的crc32编入到bundlename，如果是需要直接加载的资源，比如data 和 pack下的资源，不处理
+            bundleName = directory + bundleName;
 
             bundleName += suffix;
             importer.assetBundleName = bundleName;
+        }
+        private string GetCRC32(string directory)
+        {
+            return CRC32.GetCRC32Str(directory).ToString();
+            return directory.Replace('/', '_');
+        }
+        private bool IsDirectoryInDataOrPack(string directory)
+        {
+            directory = directory.Replace('\\', '/');
+
+            if (directory.StartsWith("Assets/" + m_strDataPath))
+            {
+                return true;
+            }
+            if(directory.StartsWith("Assets/" + m_strPackByFolderPath))
+            {
+                return true;
+            }
+            if (directory.StartsWith("Assets/" + m_strUguiPath))
+            {
+                return true;
+            }
+
+            return false;
         }
         private bool FixName(ref string curName)
         {

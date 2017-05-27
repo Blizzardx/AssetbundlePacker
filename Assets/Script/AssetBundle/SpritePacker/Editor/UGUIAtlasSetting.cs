@@ -50,7 +50,6 @@ class DefaultPackerPolicySample : UnityEditor.Sprites.IPackerPolicy
                 //entry.settings.usageMode = ins.usageMode;
                 entry.settings.colorSpace = colorSpace;
                 entry.settings.compressionQuality = compressQuality;
-                Debug.Log("comp " + compressQuality);
 
                 entry.settings.filterMode = Enum.IsDefined(typeof(FilterMode), ti.filterMode) ? ti.filterMode : FilterMode.Bilinear;
                 entry.settings.maxWidth = 1024;
