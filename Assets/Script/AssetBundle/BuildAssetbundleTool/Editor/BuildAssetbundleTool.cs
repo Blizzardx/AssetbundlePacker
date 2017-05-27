@@ -88,7 +88,7 @@ namespace Assets.Scripts.AssetBundle.BuildAssetbundleTool.Editor
                 return m_ErrorInfo;
             }
             // check all packed assets ( with deps )
-            CheckAllPackAssets();
+            CheckAllPackByFolderAssets();
             if (m_ErrorInfo != null)
             {
                 return m_ErrorInfo;
@@ -179,8 +179,8 @@ namespace Assets.Scripts.AssetBundle.BuildAssetbundleTool.Editor
 
                 allAssetList.Add(assetInfo);
             }
-            //确保需要打包的主资源不重名
-            if(IsMainAssetsHaveSameName(allAssetList))
+            //确保需要打包的主资源不重名 && 同时检查不跟pack by folder 下和ugui下的文件夹名重名
+            if(IsMainAssetsHaveSameName(allAssetList,GetAllPackbyFolderAndUguiFolderNameList()))
             {
                 return;
             }
@@ -203,6 +203,18 @@ namespace Assets.Scripts.AssetBundle.BuildAssetbundleTool.Editor
             // 根据筛选器重置bundle 名字 
             SetAssetbundleNameByFilter(filter);
         }
+        private List<string> GetAllPackbyFolderAndUguiFolderNameList()
+        {
+            List<string> res = new List<string>();
+
+            var dirs = GetAllDirectoryByDirectory(m_strPackByFolderPath);
+            dirs.AddRange(GetAllDirectoryByDirectory(m_strUguiPath));
+            for(int i=0;i<dirs.Count;++i)
+            {
+                res.Add(dirs[i].Name);
+            }
+            return res;
+        }
         private bool IsMainAsseetsInWhiteList(List<BuildAssetElemmentInfo> allAssetList)
         {
             foreach(var elem in allAssetList)
@@ -215,45 +227,25 @@ namespace Assets.Scripts.AssetBundle.BuildAssetbundleTool.Editor
             }
             return true;
         }
-        private void CheckAllPackAssets()
+        private void CheckAllPackByFolderAssets()
         {
-            List<BuildAssetElemmentInfo> allAssetList = new List<BuildAssetElemmentInfo>();
+            var files = GetFilesByDirectory(m_strPackByFolderPath);            
 
-            var dataPathPerfix = Application.dataPath.Substring(0, Application.dataPath.IndexOf("Assets"));
-            var realPath = Application.dataPath + "/" + m_strPackByFolderPath;
-            var dir = new DirectoryInfo(realPath);
-            var files = dir.GetFiles("*", SearchOption.AllDirectories);
-
-            for (var i = 0; i < files.Length; ++i)
+            for (var i = 0; i < files.Count; ++i)
             {
                 AssetInfo info = new AssetInfo(files[i].FullName);
-
-                if (info.IsInSuffixList(m_IgnoreSuffixList))
-                {
-                    continue;
-                }
 
                 SetAssetBundleName(info, files[i].Directory.Name);
             }
         }
         private void SetAndPackUguiAtlas()
         {
-            List<BuildAssetElemmentInfo> allAssetList = new List<BuildAssetElemmentInfo>();
-
-            var dataPathPerfix = Application.dataPath.Substring(0, Application.dataPath.IndexOf("Assets"));
-            var realPath = Application.dataPath + "/" + m_strUguiPath;
-            var dir = new DirectoryInfo(realPath);
-            var files = dir.GetFiles("*", SearchOption.AllDirectories);
-
-            for (var i = 0; i < files.Length; ++i)
+            var files = GetFilesByDirectory(m_strUguiPath);
+          
+            for (var i = 0; i < files.Count; ++i)
             {
                 AssetInfo info = new AssetInfo(files[i].FullName);
-
-                if (info.IsInSuffixList(m_IgnoreSuffixList))
-                {
-                    continue;
-                }
-
+                
                 SetAssetBundleName(info, files[i].Directory.Name);
             }
         }
@@ -274,6 +266,52 @@ namespace Assets.Scripts.AssetBundle.BuildAssetbundleTool.Editor
         #endregion
 
         #region tool
+        private List<FileInfo> GetFilesByDirectory(string directory)
+        {
+            List<FileInfo> res = new List<FileInfo>();
+
+            var dataPathPerfix = Application.dataPath.Substring(0, Application.dataPath.IndexOf("Assets"));
+            var realPath = Application.dataPath + "/" + directory;
+            var dir = new DirectoryInfo(realPath);
+            var files = dir.GetFiles("*", SearchOption.AllDirectories);
+
+            for (var i = 0; i < files.Length; ++i)
+            {
+                AssetInfo info = new AssetInfo(files[i].FullName);
+
+                if (info.IsInSuffixList(m_IgnoreSuffixList))
+                {
+                    continue;
+                }
+
+                res.Add(files[i]);
+            }
+
+            return res;
+        }
+        private List<DirectoryInfo> GetAllDirectoryByDirectory(string directory)
+        {
+            var dataPathPerfix = Application.dataPath.Substring(0, Application.dataPath.IndexOf("Assets"));
+            var realPath = Application.dataPath + "/" + directory;
+            var dir = new DirectoryInfo(realPath);
+
+            List<DirectoryInfo> res = new List<DirectoryInfo>();
+            GetAllDirectory(dir, ref res);
+
+            return res;
+        }
+        private void GetAllDirectory(DirectoryInfo root,ref List<DirectoryInfo> result)
+        {
+            result.Add(root);
+            var dirs = root.GetDirectories();
+            if(null != dirs)
+            {
+                foreach(var elem in dirs)
+                {
+                    GetAllDirectory(elem,ref result);
+                }
+            }
+        }
         private bool CheckPathInIncludeIn(string targetPath, string sourcePath)
         {
             targetPath = targetPath.Replace('\\', '/');
@@ -317,17 +355,26 @@ namespace Assets.Scripts.AssetBundle.BuildAssetbundleTool.Editor
             }
             return false;
         }
-        private bool IsMainAssetsHaveSameName(List<BuildAssetElemmentInfo> targetList)
+        private bool IsMainAssetsHaveSameName(List<BuildAssetElemmentInfo> targetList,List<string> packanduguiBundleNameList)
         {
             HashSet<string> tmpSet = new HashSet<string>();
             foreach(var elem in targetList)
             {
                 if(tmpSet.Contains(elem.mainAssetInfo.GetFileNameWithoutSuffix()))
                 {
-                    m_ErrorInfo = new Exception(elem.mainAssetInfo.GetFullPath());
+                    m_ErrorInfo = new Exception("bundle name already exist at " + elem.mainAssetInfo.GetFullPath());
                     return true;
                 }
                 tmpSet.Add(elem.mainAssetInfo.GetFileNameWithoutSuffix());
+            }
+            foreach(var elem in packanduguiBundleNameList)
+            {
+                if (tmpSet.Contains(elem))
+                {
+                    m_ErrorInfo = new Exception("bundle name already exist at " + elem + " : " + m_strUguiPath + " : " + m_strPackByFolderPath);
+                    return true;
+                }
+                tmpSet.Add(elem);
             }
             return false;
         }
@@ -578,7 +625,7 @@ namespace Assets.Scripts.AssetBundle.BuildAssetbundleTool.Editor
         private void DoSetBundleName(string directory,AssetImporter importer, string bundleName, string suffix)
         {
             //为了防止重名，如果不是需要直接加载的资源，计算路径的crc32 加入到bundlename里边
-            if (string.IsNullOrEmpty(directory) || IsDirectoryInDataOrPack(directory))
+            if (string.IsNullOrEmpty(directory) || IsDirectoryInDataOrPackOrUgui(directory))
             {
                 directory = string.Empty;
             }
@@ -609,7 +656,7 @@ namespace Assets.Scripts.AssetBundle.BuildAssetbundleTool.Editor
             return CRC32.GetCRC32Str(directory).ToString();
             return directory.Replace('/', '_');
         }
-        private bool IsDirectoryInDataOrPack(string directory)
+        private bool IsDirectoryInDataOrPackOrUgui(string directory)
         {
             directory = directory.Replace('\\', '/');
 
