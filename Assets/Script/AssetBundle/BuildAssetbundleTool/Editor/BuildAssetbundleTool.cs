@@ -546,7 +546,7 @@ namespace Assets.Scripts.AssetBundle.BuildAssetbundleTool.Editor
                             ++tmpIndex;
                             if (finalList.Count == 0)
                             {
-                                finalList = InitFinalList(elem.Value, asset.Key);
+                                finalList = InitFinalList(doneAssetList,elem.Value, asset.Key);
                             }
                             else
                             {
@@ -571,30 +571,33 @@ namespace Assets.Scripts.AssetBundle.BuildAssetbundleTool.Editor
                 }
             }
         }
-        private List<AssetInfo> InitFinalList(List<BuildAssetElementChildInfo> targetList, string mainAssetFullPath)
+        private List<AssetInfo> InitFinalList(HashSet<string> doneList,List<BuildAssetElementChildInfo> targetList, string mainAssetFullPath)
         {
             List<AssetInfo> res = new List<AssetInfo>();
             foreach (var elem in targetList)
             {
-                if(elem.assetInfo.GetFullPath() == mainAssetFullPath)
+                if (elem.assetInfo.GetFullPath() == mainAssetFullPath)
                 {
                     continue;
-                }
-                res.Add(elem.assetInfo);
+                }               
+                if (null == doneList || !doneList.Contains(elem.assetInfo.GetFullPath()))
+                {
+                    res.Add(elem.assetInfo);
+                }                
             }
             return res;
         }
         private List<AssetInfo> CombineToSaveSameItem(List<AssetInfo> finalList, List<BuildAssetElementChildInfo> targetList, string mainAssetFullPath)
         {
             List<AssetInfo> res = new List<AssetInfo>();
-            var tmpList = InitFinalList(targetList, mainAssetFullPath);
+            var tmpList = InitFinalList(null,targetList, mainAssetFullPath);
 
-            Dictionary<string, AssetInfo> tmpMap = new Dictionary<string, AssetInfo>();
+            HashSet<string> tmpMap = new HashSet<string>();
             foreach(var elem in finalList)
             {
-                if(!tmpMap.ContainsKey(elem.GetFullPath()))
+                if(!tmpMap.Contains(elem.GetFullPath()))
                 {
-                    tmpMap.Add(elem.GetFullPath(), elem);
+                    tmpMap.Add(elem.GetFullPath());
                 }
                 else
                 {
@@ -603,7 +606,7 @@ namespace Assets.Scripts.AssetBundle.BuildAssetbundleTool.Editor
             }
             foreach(var elem in tmpList)
             {
-                if(tmpMap.ContainsKey(elem.GetFullPath()))
+                if(tmpMap.Contains(elem.GetFullPath()))
                 {
                     res.Add(elem);
                 }
