@@ -43,7 +43,6 @@ namespace Assets.Script.AssetBundle.ReplaceInternalAssetHandler.Editor
             ".anim",
         };
         private string m_strReplacedInternalAssetPath;
-        private string m_strShaderZipPath;
         private Dictionary<string, AssetInfo> m_ShaderMap;
         private Dictionary<string, AssetInfo> m_MatMap;
         private List<UnityEngine.Object> m_AllInternalAsset;
@@ -58,7 +57,6 @@ namespace Assets.Script.AssetBundle.ReplaceInternalAssetHandler.Editor
         {
             m_Reporter = new List<FileReplaceReport>();
 
-            m_strShaderZipPath = shaderzipPath;
             m_strReplacedInternalAssetPath = internalAssetsPath;
             
             HandlerShader();
@@ -110,8 +108,7 @@ namespace Assets.Script.AssetBundle.ReplaceInternalAssetHandler.Editor
         {
             m_MatMap = new Dictionary<string, AssetInfo>();
             m_ShaderMap = new Dictionary<string, AssetInfo>();
-
-            var dataPathPerfix = Application.dataPath.Substring(0, Application.dataPath.IndexOf("Assets"));
+            
             var realPath = Application.dataPath + "/" + m_strReplacedInternalAssetPath;
             var dir = new DirectoryInfo(realPath);
             var files = dir.GetFiles("*", SearchOption.AllDirectories);

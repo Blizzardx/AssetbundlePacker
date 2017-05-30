@@ -26,7 +26,6 @@ namespace Assets.Scripts.AssetBundle.BuildAssetbundleTool.Editor
     }
     public class BuildAssetbundleTool
     {
-        private string m_strRootPath;
         private string m_strDataPath;
         private string m_strPackByFolderPath;
         private string m_strUguiPath;
@@ -50,6 +49,11 @@ namespace Assets.Scripts.AssetBundle.BuildAssetbundleTool.Editor
             ".wav",
             ".mp3",
         };
+        private string[] m_UguiPathWhiteList = new string[]
+        {
+            ".png",
+            ".jpg",
+        };
         private string[] m_AlwaysNullBundleNameSuffixList = new string[]
         {
             "mask",
@@ -61,7 +65,6 @@ namespace Assets.Scripts.AssetBundle.BuildAssetbundleTool.Editor
         #region public interface
         public Exception Build(string dataPath, string packByFolderPath, string uguiPath, string outputPath)
         {
-            m_strRootPath = Application.dataPath;
             m_strDataPath = dataPath;
             m_strPackByFolderPath = packByFolderPath;
             m_strUguiPath = uguiPath;
@@ -234,7 +237,11 @@ namespace Assets.Scripts.AssetBundle.BuildAssetbundleTool.Editor
             for (var i = 0; i < files.Count; ++i)
             {
                 AssetInfo info = new AssetInfo(files[i].FullName);
-
+                // check asset is in white list
+                if (!info.IsInSuffixList(m_DataPathWhiteList))
+                {
+                    m_ErrorInfo = new Exception("Asset is not in white list " + info.GetFullPath());
+                }
                 SetAssetBundleName(info, files[i].Directory.Name);
             }
         }
@@ -245,7 +252,11 @@ namespace Assets.Scripts.AssetBundle.BuildAssetbundleTool.Editor
             for (var i = 0; i < files.Count; ++i)
             {
                 AssetInfo info = new AssetInfo(files[i].FullName);
-                
+                // check asset is in white list
+                if(!info.IsInSuffixList(m_UguiPathWhiteList))
+                {
+                    m_ErrorInfo = new Exception("Asset is not in white list " + info.GetFullPath());
+                }
                 SetAssetBundleName(info, files[i].Directory.Name);
             }
         }
@@ -269,8 +280,7 @@ namespace Assets.Scripts.AssetBundle.BuildAssetbundleTool.Editor
         private List<FileInfo> GetFilesByDirectory(string directory)
         {
             List<FileInfo> res = new List<FileInfo>();
-
-            var dataPathPerfix = Application.dataPath.Substring(0, Application.dataPath.IndexOf("Assets"));
+            
             var realPath = Application.dataPath + "/" + directory;
             var dir = new DirectoryInfo(realPath);
             var files = dir.GetFiles("*", SearchOption.AllDirectories);
@@ -291,7 +301,6 @@ namespace Assets.Scripts.AssetBundle.BuildAssetbundleTool.Editor
         }
         private List<DirectoryInfo> GetAllDirectoryByDirectory(string directory)
         {
-            var dataPathPerfix = Application.dataPath.Substring(0, Application.dataPath.IndexOf("Assets"));
             var realPath = Application.dataPath + "/" + directory;
             var dir = new DirectoryInfo(realPath);
 
@@ -558,7 +567,7 @@ namespace Assets.Scripts.AssetBundle.BuildAssetbundleTool.Editor
                 {
                     SetAssetBundleName(elem, self);
                     // add to done list
-                    doneAssetList.Add(asset.Key);
+                    doneAssetList.Add(elem.GetFullPath());
                 }
             }
         }
@@ -631,7 +640,7 @@ namespace Assets.Scripts.AssetBundle.BuildAssetbundleTool.Editor
             }
             else
             {
-                directory = GetCRC32(directory) + "_";
+                directory = GetCRC32(CutFullPathToDirectory(directory)) + "_";
             }
             if (string.IsNullOrEmpty(bundleName))
             {
@@ -649,11 +658,19 @@ namespace Assets.Scripts.AssetBundle.BuildAssetbundleTool.Editor
             bundleName = directory + bundleName;
 
             bundleName += suffix;
-            importer.assetBundleName = bundleName;
+            for(int i=0;i<m_AlwaysNullBundleNameSuffixList.Length;++i)
+            {
+                if(importer.assetPath.EndsWith(m_AlwaysNullBundleNameSuffixList[i]))
+                {
+                    bundleName = null;
+                    break;
+                }
+            }
+            importer.assetBundleName = bundleName.ToLower();
         }
         private string GetCRC32(string directory)
         {
-            return CRC32.GetCRC32Str(directory).ToString();
+           // return CRC32.GetCRC32Str(directory).ToString();
             return directory.Replace('/', '_');
         }
         private bool IsDirectoryInDataOrPackOrUgui(string directory)
@@ -723,6 +740,16 @@ namespace Assets.Scripts.AssetBundle.BuildAssetbundleTool.Editor
                 return true;
             }
             return false;
+        }
+        private string CutFullPathToDirectory(string fullPath)
+        {
+            int index = fullPath.LastIndexOf('/');
+            int index1 = fullPath.LastIndexOf('.');
+            if(index1 > index)
+            {
+                return fullPath.Substring(0, index + 1);
+            }
+            return fullPath;
         }
         #endregion
     }
