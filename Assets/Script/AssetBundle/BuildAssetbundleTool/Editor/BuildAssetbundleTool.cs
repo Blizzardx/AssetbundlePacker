@@ -48,6 +48,17 @@ namespace Assets.Scripts.AssetBundle.BuildAssetbundleTool.Editor
             ".mat",
             ".wav",
             ".mp3",
+            ".ogg",
+        };
+        private string[] m_PackPathWhiteList = new string[]
+        {
+            ".prefab",
+            ".unity",
+            ".mat",
+            ".wav",
+            ".mp3",
+            ".ogg",
+            ".png",
         };
         private string[] m_UguiPathWhiteList = new string[]
         {
@@ -102,6 +113,9 @@ namespace Assets.Scripts.AssetBundle.BuildAssetbundleTool.Editor
             {
                 return m_ErrorInfo;
             }
+            // save
+            AssetDatabase.SaveAssets();
+
             // begin build asset bundle & out put asset bundle
             BuildBundlesAndOutput();
 
@@ -176,6 +190,11 @@ namespace Assets.Scripts.AssetBundle.BuildAssetbundleTool.Editor
                 {
                     BuildAssetElementChildInfo childInfo = new BuildAssetElementChildInfo();
                     childInfo.assetInfo = new AssetInfo(dataPathPerfix + elem);
+                    if(childInfo.assetInfo.IsInSuffixList(m_IgnoreSuffixList))
+                    {
+                        // dep assets is in ignore list
+                        continue;
+                    }
                     childInfo.refCount = 0;
                     assetInfo.depAssetsList.Add(childInfo);
                 }
@@ -238,7 +257,7 @@ namespace Assets.Scripts.AssetBundle.BuildAssetbundleTool.Editor
             {
                 AssetInfo info = new AssetInfo(files[i].FullName);
                 // check asset is in white list
-                if (!info.IsInSuffixList(m_DataPathWhiteList))
+                if (!info.IsInSuffixList(m_PackPathWhiteList))
                 {
                     m_ErrorInfo = new Exception("Asset is not in white list " + info.GetFullPath());
                 }
@@ -669,7 +688,7 @@ namespace Assets.Scripts.AssetBundle.BuildAssetbundleTool.Editor
                     break;
                 }
             }
-            importer.assetBundleName = bundleName.ToLower();
+            importer.assetBundleName = bundleName != null ? bundleName.ToLower() : bundleName;
         }
         private string GetCRC32(string directory)
         {
