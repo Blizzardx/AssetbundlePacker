@@ -688,6 +688,12 @@ namespace Assets.Scripts.AssetBundle.BuildAssetbundleTool.Editor
                     break;
                 }
             }
+            if(bundleName != null && bundleName.Length > 100)
+            {
+                Debug.LogWarning("bundle name too long " + bundleName);
+                bundleName = CRC32.GetCRC32Str(bundleName).ToString();
+                Debug.LogWarning("auto fix long bundle name to " + bundleName);
+            }
             importer.assetBundleName = bundleName != null ? bundleName.ToLower() : bundleName;
         }
         private string GetCRC32(string directory)
