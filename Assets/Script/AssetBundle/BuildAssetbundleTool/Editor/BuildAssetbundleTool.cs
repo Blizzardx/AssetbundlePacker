@@ -49,6 +49,7 @@ namespace Assets.Scripts.AssetBundle.BuildAssetbundleTool.Editor
             ".wav",
             ".mp3",
             ".ogg",
+            ".ttf",
         };
         private string[] m_PackPathWhiteList = new string[]
         {
@@ -195,6 +196,12 @@ namespace Assets.Scripts.AssetBundle.BuildAssetbundleTool.Editor
                         // dep assets is in ignore list
                         continue;
                     }
+                    if(elem.StartsWith("Assets/" + m_strUguiPath))
+                    {
+                        // dep assets is in ugui
+                        //Debug.LogError("ugui: " + elem);
+                        continue;
+                    }
                     childInfo.refCount = 0;
                     assetInfo.depAssetsList.Add(childInfo);
                 }
@@ -211,8 +218,8 @@ namespace Assets.Scripts.AssetBundle.BuildAssetbundleTool.Editor
             {
                 return;
             }
-            // 确保所有资源以及引用的资源不在ugui 和 pack by folder 目录中
-            if (IsAssetsInTargetDataPath(allAssetList))
+            // 确保所有资源以及引用的资源不在pack by folder 目录中
+            if (IsAssetsInPackbyFolderPath(allAssetList))
             {
                 return;
             }
@@ -360,7 +367,7 @@ namespace Assets.Scripts.AssetBundle.BuildAssetbundleTool.Editor
 
             return filePath.StartsWith(folderPath);
         }
-        private bool IsAssetsInTargetDataPath(List<BuildAssetElemmentInfo> targetList)
+        private bool IsAssetsInPackbyFolderPath(List<BuildAssetElemmentInfo> targetList)
         {
             List<string> checkPathList = new List<string>()
             {
@@ -662,7 +669,7 @@ namespace Assets.Scripts.AssetBundle.BuildAssetbundleTool.Editor
             }
             else
             {
-                directory = GetCRC32(CutFullPathToDirectory(directory)) + "_";
+                directory = GetCRC32(directory) + "_";
             }
             if (string.IsNullOrEmpty(bundleName))
             {
@@ -698,7 +705,7 @@ namespace Assets.Scripts.AssetBundle.BuildAssetbundleTool.Editor
         }
         private string GetCRC32(string directory)
         {
-           // return CRC32.GetCRC32Str(directory).ToString();
+            //return CRC32.GetCRC32Str(directory).ToString();
             return directory.Replace('/', '_');
         }
         private bool IsDirectoryInDataOrPackOrUgui(string directory)
