@@ -382,7 +382,8 @@ namespace Assets.Scripts.AssetBundle.BuildAssetbundleTool.Editor
                     {
                         if(CheckFileInInFolder(subElem.assetInfo.GetFullPath(),path))
                         {
-                            m_ErrorInfo = new Exception(subElem.assetInfo.GetFullPath() + " can't at folder " + path + " " + elem.mainAssetInfo.GetFullPath());
+                            string errorInfo = string.Format("{0} dependent {1} ,but {1} at special path {2} ,is not not legal !", elem.mainAssetInfo.GetFullPath(), subElem.assetInfo.GetFullPath(), path);
+                            m_ErrorInfo = new Exception(errorInfo);
                             return true;
                         }
                     }
@@ -705,8 +706,8 @@ namespace Assets.Scripts.AssetBundle.BuildAssetbundleTool.Editor
         }
         private string GetCRC32(string directory)
         {
-            //return CRC32.GetCRC32Str(directory).ToString();
-            return directory.Replace('/', '_');
+            return CRC32.GetCRC32Str(directory).ToString();
+           // return directory.Replace('/', '_');
         }
         private bool IsDirectoryInDataOrPackOrUgui(string directory)
         {
