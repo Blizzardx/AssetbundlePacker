@@ -31,9 +31,13 @@ namespace Assets.Scripts.AssetBundle.BuildAssetbundleTool.Editor
         private string m_strUguiPath;
         private string m_strOutputPath;
         private Exception m_ErrorInfo;
+        private Dictionary<string, List<string>> m_AutoFixedNameList;
+        private Dictionary<string, string> m_BundleNameReport;
+
         private const string m_strBundleSuffix = "bundle";
         private const string m_strSceneAssetExtSuffix = "scene";
-        private Dictionary<string, List<string>> m_AutoFixedNameList;
+        private const bool m_bIsEncryptBundleName = false;
+
 
         private string[] m_IgnoreSuffixList = new string[]
         {
@@ -84,6 +88,7 @@ namespace Assets.Scripts.AssetBundle.BuildAssetbundleTool.Editor
             m_strOutputPath = outputPath;
             m_ErrorInfo = null;
             m_AutoFixedNameList = new Dictionary<string, List<string>>();
+            m_BundleNameReport = new Dictionary<string, string>();
 
             // make sure output path is include in StreamingAssets
             CheckOutputPaht(m_strOutputPath);
@@ -123,6 +128,10 @@ namespace Assets.Scripts.AssetBundle.BuildAssetbundleTool.Editor
             BuildBundlesAndOutput();
 
             return m_ErrorInfo;
+        }
+        public Dictionary<string, string> GetReport()
+        {
+            return m_BundleNameReport;
         }
         #endregion
 
@@ -665,6 +674,20 @@ namespace Assets.Scripts.AssetBundle.BuildAssetbundleTool.Editor
         }
         private void DoSetBundleName(string directory,AssetImporter importer, string bundleName, string suffix)
         {
+            string realBundleName = null;
+            if (m_bIsEncryptBundleName)
+            {
+                realBundleName = CaculateAssetBundleNameWithEncrypt(directory, importer, bundleName, suffix);
+            }
+            else
+            {
+                realBundleName = CaculateAssetBundleNameWithOutEncrypt(directory, importer, bundleName, suffix);
+            }
+
+            importer.assetBundleName = realBundleName;
+        }
+        private string CaculateAssetBundleNameWithOutEncrypt(string directory, AssetImporter importer, string bundleName, string suffix)
+        {
             //为了防止重名，如果不是需要直接加载的资源，计算路径的crc32 加入到bundlename里边
             if (string.IsNullOrEmpty(directory) || IsDirectoryInDataOrPackOrUgui(directory))
             {
@@ -674,10 +697,11 @@ namespace Assets.Scripts.AssetBundle.BuildAssetbundleTool.Editor
             {
                 directory = GetCRC32(directory) + "_";
             }
+
             if (string.IsNullOrEmpty(bundleName))
             {
                 Debug.LogError("error bundle name ,name is null or empty " + bundleName);
-            } 
+            }
 
             // fix bundle name 
             var lastName = bundleName;
@@ -685,27 +709,82 @@ namespace Assets.Scripts.AssetBundle.BuildAssetbundleTool.Editor
             if (isChange)
             {
                 Debug.LogFormat("auto fix bundle name {0} to {1} ", lastName, bundleName);
-                CheckAutoFixedNameIsLegal(lastName, bundleName);
             }
+            CheckAutoFixedNameIsLegal(lastName, bundleName);
             //把路径的crc32编入到bundlename，如果是需要直接加载的资源，比如data 和 pack下的资源，不处理
             bundleName = directory + bundleName;
 
-            bundleName += suffix;
-            for(int i=0;i<m_AlwaysNullBundleNameSuffixList.Length;++i)
+            for (int i = 0; i < m_AlwaysNullBundleNameSuffixList.Length; ++i)
             {
-                if(importer.assetPath.EndsWith(m_AlwaysNullBundleNameSuffixList[i]))
+                if (importer.assetPath.EndsWith(m_AlwaysNullBundleNameSuffixList[i]))
                 {
                     bundleName = null;
-                    break;
+                    return null;
                 }
             }
-            if(bundleName != null && bundleName.Length > 100)
+            if (null != bundleName)
             {
-                Debug.LogWarning("bundle name too long " + bundleName);
-                bundleName = CRC32.GetCRC32Str(bundleName).ToString();
-                Debug.LogWarning("auto fix long bundle name to " + bundleName);
+                if (bundleName.Length > 100)
+                {
+                    Debug.LogWarning("bundle name too long " + bundleName);
+                    bundleName = CRC32.GetCRC32Str(bundleName).ToString();
+                    Debug.LogWarning("auto fix long bundle name to " + bundleName);
+                }
+                bundleName += suffix;
+                bundleName = bundleName.ToLower();
             }
-            importer.assetBundleName = bundleName != null ? bundleName.ToLower() : bundleName;
+            return bundleName;
+        }
+        private string CaculateAssetBundleNameWithEncrypt(string directory, AssetImporter importer, string bundleName, string suffix)
+        {
+            bool needGenReport = false;
+            
+            if (string.IsNullOrEmpty(directory) )
+            {
+                directory = string.Empty;
+            }
+            if(IsDirectoryInDataOrPackOrUgui(directory))
+            {
+                directory = string.Empty;
+                needGenReport = true;
+            }
+
+            if (string.IsNullOrEmpty(bundleName))
+            {
+                Debug.LogError("error bundle name ,name is null or empty " + bundleName);
+                return null;
+            }
+            
+            bundleName = directory + bundleName;
+            var lastName = bundleName;
+            // caculate bundle name with crc32
+            bundleName = CRC32.GetCRC32Str(bundleName).ToString();
+
+            CheckAutoFixedNameIsLegal(lastName, bundleName);
+            for (int i = 0; i < m_AlwaysNullBundleNameSuffixList.Length; ++i)
+            {
+                if (importer.assetPath.EndsWith(m_AlwaysNullBundleNameSuffixList[i]))
+                {
+                    bundleName = null;
+                    return null;
+                }
+            }
+            if(null != bundleName)
+            {
+                if (bundleName.Length > 100)
+                {
+                    Debug.LogWarning("bundle name too long " + bundleName);
+                    bundleName = CRC32.GetCRC32Str(bundleName).ToString();
+                    Debug.LogWarning("auto fix long bundle name to " + bundleName);
+                }
+                bundleName += suffix;
+                bundleName = bundleName.ToLower();
+                if (needGenReport)
+                {
+                    GenReport(lastName, bundleName);
+                }
+            }
+            return bundleName;
         }
         private string GetCRC32(string directory)
         {
@@ -813,6 +892,24 @@ namespace Assets.Scripts.AssetBundle.BuildAssetbundleTool.Editor
             else
             {
                 m_AutoFixedNameList.Add(newName, new List<string>() { lastName });
+            }
+        }
+        private void GenReport(string lastName,string newName)
+        {
+            if(string.IsNullOrEmpty(newName) || string.IsNullOrEmpty(lastName))
+            {
+                return;
+            }
+            if (m_BundleNameReport.ContainsKey(lastName))
+            {
+                if (m_BundleNameReport[lastName] != newName)
+                {
+                    Debug.LogError(lastName + " " + newName + " " + m_BundleNameReport[lastName]);
+                }
+            }
+            else
+            {
+                m_BundleNameReport.Add(lastName, newName);
             }
         }
         #endregion
