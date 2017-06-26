@@ -739,11 +739,7 @@ namespace Assets.Scripts.AssetBundle.BuildAssetbundleTool.Editor
         {
             bool needGenReport = false;
             
-            if (string.IsNullOrEmpty(directory) )
-            {
-                directory = string.Empty;
-            }
-            if(IsDirectoryInDataOrPackOrUgui(directory))
+            if (string.IsNullOrEmpty(directory) || IsDirectoryInDataOrPackOrUgui(directory))
             {
                 directory = string.Empty;
                 needGenReport = true;
