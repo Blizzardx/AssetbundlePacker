@@ -33,6 +33,7 @@ namespace Assets.Scripts.AssetBundle.BuildAssetbundleTool.Editor
         private Exception m_ErrorInfo;
         private const string m_strBundleSuffix = "bundle";
         private const string m_strSceneAssetExtSuffix = "scene";
+        private Dictionary<string, List<string>> m_AutoFixedNameList;
 
         private string[] m_IgnoreSuffixList = new string[]
         {
@@ -82,6 +83,7 @@ namespace Assets.Scripts.AssetBundle.BuildAssetbundleTool.Editor
             m_strUguiPath = uguiPath;
             m_strOutputPath = outputPath;
             m_ErrorInfo = null;
+            m_AutoFixedNameList = new Dictionary<string, List<string>>();
 
             // make sure output path is include in StreamingAssets
             CheckOutputPaht(m_strOutputPath);
@@ -683,6 +685,7 @@ namespace Assets.Scripts.AssetBundle.BuildAssetbundleTool.Editor
             if (isChange)
             {
                 Debug.LogFormat("auto fix bundle name {0} to {1} ", lastName, bundleName);
+                CheckAutoFixedNameIsLegal(lastName, bundleName);
             }
             //把路径的crc32编入到bundlename，如果是需要直接加载的资源，比如data 和 pack下的资源，不处理
             bundleName = directory + bundleName;
@@ -740,7 +743,7 @@ namespace Assets.Scripts.AssetBundle.BuildAssetbundleTool.Editor
 
             for (int i = 0; i < curName.Length; ++i)
             {
-                if (IsNameLegitimate(curName[i]))
+                if (IsNameLegal(curName[i]))
                 {
                     newName.Append(curName[i]);
                 }
@@ -753,7 +756,7 @@ namespace Assets.Scripts.AssetBundle.BuildAssetbundleTool.Editor
             curName = newName.ToString();
             return isChange;
         }
-        private bool IsNameLegitimate(char str)
+        private bool IsNameLegal(char str)
         {
             if (str >= '0' && str <= '9')
             {
@@ -786,6 +789,31 @@ namespace Assets.Scripts.AssetBundle.BuildAssetbundleTool.Editor
                 return fullPath.Substring(0, index + 1);
             }
             return fullPath;
+        }
+        private void CheckAutoFixedNameIsLegal(string lastName,string newName)
+        {
+            if(m_AutoFixedNameList.ContainsKey(newName))
+            {
+                if(m_AutoFixedNameList[newName].Count > 0)
+                {
+                    var lastNameList = m_AutoFixedNameList[newName];
+                    for(int i=0;i<lastNameList.Count;++i)
+                    {
+                        var tmplastName = lastNameList[i];
+                        if(tmplastName != lastName)
+                        {
+                            string errorInfo = "auto fix name with error " + lastName + " " + m_AutoFixedNameList[newName][0];
+                            m_ErrorInfo = new Exception(errorInfo);
+                            throw m_ErrorInfo;
+                        }
+                    }                    
+                }
+                m_AutoFixedNameList[newName].Add(lastName);
+            }
+            else
+            {
+                m_AutoFixedNameList.Add(newName, new List<string>() { lastName });
+            }
         }
         #endregion
     }
